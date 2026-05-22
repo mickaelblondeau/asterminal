@@ -40,7 +40,7 @@ func getCachedStyle(fg, bg string) lipgloss.Style {
 	return styleCache[key]
 }
 
-func drawCircle(objectMap map[string]cell, cx int, cy int, r float64, color string) {
+func drawCircle(objectMap map[string]cell, cx int, cy int, r float64, w, h int, color string) {
 	char := "⬤"
 
 	if r < radiusForMedium {
@@ -67,9 +67,11 @@ func drawCircle(objectMap map[string]cell, cx int, cy int, r float64, color stri
 		for x := -rx; x <= rx; x++ {
 			dx := float64(x) * aspect
 			dy := float64(y)
+			cellX := cx + x
+			cellY := cy + y
 
-			if dx*dx+dy*dy <= r*r {
-				objectMap[fmt.Sprintf("%d:%d", cx+x, cy+y)] = cell{bg: color, char: " "}
+			if dx*dx+dy*dy <= r*r && cellX >= 0 && cellY >= 0 && cellX <= w && cellY <= h {
+				objectMap[fmt.Sprintf("%d:%d", cellX, cellY)] = cell{bg: color, char: " "}
 			}
 		}
 	}

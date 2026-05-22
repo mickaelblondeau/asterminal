@@ -121,7 +121,7 @@ func (m *Renderer) View() string {
 	)
 }
 
-func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOffset int64) string {
+func renderMap(w, h int, camera model.Camera, objects []model.Object, timeOffset int64) string {
 	var res strings.Builder
 	objectMap := make(map[string]cell)
 	t := time.Now().Unix() + timeOffset
@@ -156,7 +156,7 @@ func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOf
 			if object.Radius == 1 {
 				drawStar(objectMap, coordX, coordY, object.Color)
 			} else {
-				drawCircle(objectMap, coordX, coordY, screenR, object.Color)
+				drawCircle(objectMap, coordX, coordY, screenR, w, h, object.Color)
 			}
 		}
 	}
@@ -164,15 +164,30 @@ func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOf
 	groundY := int((0.5 + float64(camera.Pitch.Val)/float64(camera.Fov)) * float64(h))
 
 	for y := range h {
-		for x := range w {
-			if y == groundY {
-				res.WriteString("─")
-			} else if y > groundY {
-				res.WriteString(groundStyle.Render("░"))
-			} else if val, ok := objectMap[fmt.Sprintf("%d:%d", x, y)]; ok {
-				res.WriteString(getCachedStyle(val.fg, val.bg).Render(val.char))
-			} else {
-				res.WriteString("\u00A0")
+		if y == groundY {
+			res.WriteString(strings.Repeat("─", w))
+		} else if y > groundY {
+			res.WriteString(groundStyle.Render(strings.Repeat("░", w)))
+		} else {
+			for x := 0; x < w; {
+				start := x
+				val, ok := objectMap[fmt.Sprintf("%d:%d", x, y)]
+
+				if ok {
+					for x < w {
+						x++
+						val2, ok := objectMap[fmt.Sprintf("%d:%d", x, y)]
+
+						if !ok || val2.bg != val.bg || val2.fg != val.fg {
+							break
+						}
+					}
+
+					res.WriteString(getCachedStyle(val.fg, val.bg).Render(strings.Repeat(val.char, x-start)))
+				} else {
+					res.WriteString("\u00A0")
+					x++
+				}
 			}
 		}
 	}
