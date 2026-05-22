@@ -18,8 +18,12 @@ const (
 )
 
 func checkVectorError(value, expected Vector, diff float64, t string) string {
-	errorDist := math.Sqrt(math.Pow(expected.X-value.X, 2) + math.Pow(expected.Y-value.Y, 2) + math.Pow(expected.Z-value.Z, 2))
-	totalDist := math.Sqrt(math.Pow(expected.X, 2) + math.Pow(expected.Y, 2) + math.Pow(expected.Z, 2))
+	dx := expected.X - value.X
+	dy := expected.Y - value.Y
+	dz := expected.Z - value.Z
+
+	errorDist := math.Sqrt(dx*dx + dy*dy + dz*dz)
+	totalDist := math.Sqrt(expected.X*expected.X + expected.Y*expected.Y + expected.Z*expected.Z)
 	diffPercent := (errorDist / totalDist) * 100
 
 	if diffPercent > diff {
