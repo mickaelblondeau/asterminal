@@ -42,6 +42,7 @@ const (
 	gmstJ2000Deg         = 280.46061837
 	earthRotationRate    = 360.98564736629
 	gmstPrecessionDeg    = 0.000387933
+	angleForCulling      = -0.01
 )
 
 func gpsToECEF(lat, lon float64) Vector {
@@ -158,7 +159,7 @@ func ConvertObjectToScreenSpace(lat, lon, yaw, pitch, fovY float64, w, h int, ob
 
 	_, _, localUp := enuBasis(lat, lon)
 
-	return screenX, screenY, dot(dir, localUp) >= 0
+	return screenX, screenY, dot(dir, localUp) >= angleForCulling
 }
 
 func NormalizedRadius(radius, distance, fovDeg float64) float64 {

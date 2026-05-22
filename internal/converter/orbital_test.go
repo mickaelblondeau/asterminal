@@ -14,7 +14,7 @@ type geocentricTestCase struct {
 
 const (
 	diff     = 0.02
-	diffMoon = 0.7
+	diffMoon = 0.65
 )
 
 func checkVectorError(value, expected Vector, diff float64, t string) string {
