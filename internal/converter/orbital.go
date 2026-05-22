@@ -113,7 +113,13 @@ func orbitalToEcliptic(x, y float64, I, Omega, w float64) Vector {
 }
 
 func heliocentricEcliptic(a, e, I, L, wbar, Omega float64) Vector {
-	M := degToRad(math.Mod(L-wbar, 360))
+	mDeg := math.Mod(L-wbar, 360)
+
+	if mDeg < 0 {
+		mDeg += 360
+	}
+
+	M := degToRad(mDeg)
 	xOrb, yOrb := keplerPosition(a, e, M)
 
 	w := degToRad(wbar - Omega)
@@ -155,6 +161,8 @@ func planetGeocentricEq(el OrbitalElements, unixSec int64) (Vector, Vector) {
 
 	geoEcl := sub(planetHelio, earthHelio)
 	geoEq := eclipticToEquatorial(geoEcl)
+
+	geoEcl = scale(geoEcl, auToMeters)
 	geoEq = scale(geoEq, auToMeters)
 
 	return geoEcl, geoEq
@@ -168,6 +176,8 @@ func sunGeocentricEq(unixSec int64) (Vector, Vector) {
 
 	sunGeoEcl := scale(earthHelio, -1)
 	sunGeoEq := eclipticToEquatorial(sunGeoEcl)
+
+	sunGeoEcl = scale(sunGeoEcl, auToMeters)
 	sunGeoEq = scale(sunGeoEq, auToMeters)
 
 	return sunGeoEcl, sunGeoEq
@@ -177,20 +187,18 @@ func PlanetGeocentricECEF(el OrbitalElements, unixSec int64) (Vector, float64) {
 	geoEcl, geoEq := planetGeocentricEq(el, unixSec)
 	ecef := equatorialToECEF(geoEq, unixSec)
 
-	ecefMeters := scale(ecef, auToMeters)
-	dist := length(geoEcl) * auToMeters
+	dist := length(geoEcl)
 
-	return ecefMeters, dist
+	return ecef, dist
 }
 
 func SunGeocentricECEF(unixSec int64) (Vector, float64) {
 	sunGeoEcl, sunGeoEq := sunGeocentricEq(unixSec)
 	ecef := equatorialToECEF(sunGeoEq, unixSec)
 
-	ecefMeters := scale(ecef, auToMeters)
-	dist := length(sunGeoEcl) * auToMeters
+	dist := length(sunGeoEcl)
 
-	return ecefMeters, dist
+	return ecef, dist
 }
 
 func MoonGeocentricECEF(unixSec int64) (Vector, float64) {

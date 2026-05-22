@@ -129,44 +129,12 @@ func cameraBasis(lat, lon, yawDeg, pitchDeg float64) (forward, right, camUp Vect
 	return
 }
 
-func ObjectECEFVec(ra, dec, dist float64, t int64) Vector {
-	return scale(celestialToECEF(ra, dec, t), dist)
+func ObjectECEFVec(ra, dec, dist float64, unixSec int64) Vector {
+	return scale(celestialToECEF(ra, dec, unixSec), dist)
 }
 
-func ConvertObjectToScreenSpace(lat, lon, yaw, pitch, fov float64, objECEF Vector, t int64) (float64, float64, bool) {
+func ConvertObjectToScreenSpace(lat, lon, yaw, pitch, fov float64, objECEF Vector) (float64, float64, bool) {
 	camECEF := gpsToECEF(lat, lon)
-
-	dir := normalize(sub(objECEF, camECEF))
-
-	forward, right, camUp := cameraBasis(
-		lat,
-		lon,
-		yaw,
-		pitch,
-	)
-
-	x := dot(dir, right)
-	y := dot(dir, camUp)
-	z := dot(dir, forward)
-
-	if z <= 1e-6 {
-		return -1, -1, false
-	}
-
-	fov = degToRad(fov)
-	s := 1.0 / math.Tan(fov/2)
-
-	screenX := 0.5 + (x/z)*s*0.5
-	screenY := 0.5 - (y/z)*s*0.5
-
-	_, _, localUp := enuBasis(lat, lon)
-
-	return screenX, screenY, dot(dir, localUp) >= 0
-}
-
-func ConvertPositionsToScreenSpace(lat, lon, yaw, pitch, fov, ra, dec, dist float64, t int64) (float64, float64, bool) {
-	camECEF := gpsToECEF(lat, lon)
-	objECEF := scale(celestialToECEF(ra, dec, t), dist)
 
 	dir := normalize(sub(objECEF, camECEF))
 

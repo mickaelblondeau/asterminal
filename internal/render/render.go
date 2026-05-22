@@ -134,7 +134,7 @@ func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOf
 			ecef = converter.ObjectECEFVec(object.Position.RA, object.Position.Dec, object.Position.Dist, t)
 		}
 
-		posX, posY, visible := converter.ConvertObjectToScreenSpace(camera.Position.Lat, camera.Position.Lon, camera.Yaw.Val, camera.Pitch.Val, camera.Fov, ecef, t)
+		posX, posY, visible := converter.ConvertObjectToScreenSpace(camera.Position.Lat, camera.Position.Lon, camera.Yaw.Val, camera.Pitch.Val, camera.Fov, ecef)
 
 		if !visible {
 			continue
