@@ -15,23 +15,20 @@ const (
 )
 
 func drawCircle(objectMap map[string]string, cx int, cy int, r float64, color string) {
+	char := "⬤"
+
+	if r < radiusForMedium {
+		char = "●"
+	}
+	if r < radiusForSmall {
+		char = "•"
+	}
+	if r < radiusForTiny {
+		char = "·"
+	}
+
 	if r < raidusForPoint {
 		style := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
-
-		char := "⬤"
-
-		if r < radiusForMedium {
-			char = "●"
-		}
-
-		if r < radiusForSmall {
-			char = "•"
-		}
-
-		if r < radiusForTiny {
-			char = "·"
-		}
-
 		objectMap[fmt.Sprintf("%d:%d", cx, cy)] = style.Render(char)
 		return
 	}
@@ -45,7 +42,6 @@ func drawCircle(objectMap map[string]string, cx int, cy int, r float64, color st
 		for x := -rx; x <= rx; x++ {
 			dx := float64(x) * aspect
 			dy := float64(y)
-
 			if dx*dx+dy*dy <= r*r {
 				objectMap[fmt.Sprintf("%d:%d", cx+x, cy+y)] = style.Render(" ")
 			}

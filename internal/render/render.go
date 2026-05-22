@@ -134,7 +134,7 @@ func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOf
 			ecef = converter.ObjectECEFVec(object.Position.RA, object.Position.Dec, object.Position.Dist, t)
 		}
 
-		posX, posY, visible := converter.ConvertObjectToScreenSpace(camera.Position.Lat, camera.Position.Lon, camera.Yaw.Val, camera.Pitch.Val, camera.Fov, ecef)
+		posX, posY, visible := converter.ConvertObjectToScreenSpace(camera.Position.Lat, camera.Position.Lon, camera.Yaw.Val, camera.Pitch.Val, camera.Fov, w, h, ecef)
 
 		if !visible {
 			continue
@@ -148,14 +148,15 @@ func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOf
 			dist = object.Distance
 		}
 
-		radius := converter.NormalizedRadius(object.Radius, dist, float64(camera.Fov))
-		intRadius := int(radius)
+		r := converter.NormalizedRadius(object.Radius, dist, camera.Fov)
+		screenR := r * float64(h) / 2.0
+		intRadius := int(screenR)
 
 		if coordX >= -intRadius*2 && coordX <= w+intRadius*2 && coordY >= -intRadius*2 && coordY <= h+intRadius*2 {
 			if object.Radius == 1 {
 				drawStar(objectMap, coordX, coordY, object.Color)
 			} else {
-				drawCircle(objectMap, coordX, coordY, radius, object.Color)
+				drawCircle(objectMap, coordX, coordY, screenR, object.Color)
 			}
 		}
 	}

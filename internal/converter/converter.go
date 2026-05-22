@@ -133,17 +133,12 @@ func ObjectECEFVec(ra, dec, dist float64, unixSec int64) Vector {
 	return scale(celestialToECEF(ra, dec, unixSec), dist)
 }
 
-func ConvertObjectToScreenSpace(lat, lon, yaw, pitch, fov float64, objECEF Vector) (float64, float64, bool) {
+func ConvertObjectToScreenSpace(lat, lon, yaw, pitch, fovY float64, w, h int, objECEF Vector) (float64, float64, bool) {
+	const charAspect = 0.5
+
 	camECEF := gpsToECEF(lat, lon)
-
 	dir := normalize(sub(objECEF, camECEF))
-
-	forward, right, camUp := cameraBasis(
-		lat,
-		lon,
-		yaw,
-		pitch,
-	)
+	forward, right, camUp := cameraBasis(lat, lon, yaw, pitch)
 
 	x := dot(dir, right)
 	y := dot(dir, camUp)
@@ -153,11 +148,13 @@ func ConvertObjectToScreenSpace(lat, lon, yaw, pitch, fov float64, objECEF Vecto
 		return -1, -1, false
 	}
 
-	fov = degToRad(fov)
-	s := 1.0 / math.Tan(fov/2)
+	fovYRad := degToRad(fovY)
+	sy := 1.0 / math.Tan(fovYRad/2)
+	screenAspect := float64(w) * charAspect / float64(h)
+	sx := sy / screenAspect
 
-	screenX := 0.5 + (x/z)*s*0.5
-	screenY := 0.5 - (y/z)*s*0.5
+	screenX := 0.5 + (x/z)*sx*0.5
+	screenY := 0.5 - (y/z)*sy*0.5
 
 	_, _, localUp := enuBasis(lat, lon)
 
