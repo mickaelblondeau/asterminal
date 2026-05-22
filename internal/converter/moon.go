@@ -60,7 +60,7 @@ func norm360(x float64) float64 {
 	return x
 }
 
-func MoonGeocentricECEF(unixSec int64) (pos Vector, distMeters float64) {
+func moonGeocentricEq(unixSec int64) (float64, Vector) {
 	T := julianCenturies(unixSec)
 	toR := math.Pi / 180
 
@@ -233,9 +233,6 @@ func MoonGeocentricECEF(unixSec int64) (pos Vector, distMeters float64) {
 	}
 
 	eq := eclipticToEquatorial(ecliptic)
-	ecef := equatorialToECEF(eq, unixSec)
-	ecefMeters := scale(ecef, 1000)
-	dist := distKm * 1000
 
-	return ecefMeters, dist
+	return distKm, eq
 }

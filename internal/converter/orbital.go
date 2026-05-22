@@ -48,7 +48,7 @@ var (
 
 const (
 	auToMeters = 1.495978707e11
-	obliquity  = 23.43928
+	obliquity  = 23.439291
 )
 
 func julianCenturies(unixSec int64) float64 {
@@ -92,51 +92,60 @@ func solveKepler(M, e float64) float64 {
 	return E
 }
 
-func heliocentricEcliptic(a, e, I, L, wbar, Omega float64) Vector {
-	w := wbar - Omega
-	M := degToRad(math.Mod(L-wbar, 360))
+func keplerPosition(a, e, M float64) (x, y float64) {
 	E := solveKepler(M, e)
 
-	xOrb := a * (math.Cos(E) - e)
-	yOrb := a * math.Sqrt(1-e*e) * math.Sin(E)
+	x = a * (math.Cos(E) - e)
+	y = a * math.Sqrt(1-e*e) * math.Sin(E)
+	return
+}
 
-	wR := degToRad(w)
-	IR := degToRad(I)
-	OR := degToRad(Omega)
+func orbitalToEcliptic(x, y float64, I, Omega, w float64) Vector {
+	cO, sO := math.Cos(Omega), math.Sin(Omega)
+	cI, sI := math.Cos(I), math.Sin(I)
+	cW, sW := math.Cos(w), math.Sin(w)
 
-	cosW, sinW := math.Cos(wR), math.Sin(wR)
-	cosI, sinI := math.Cos(IR), math.Sin(IR)
-	cosO, sinO := math.Cos(OR), math.Sin(OR)
+	X := (cO*cW-sO*sW*cI)*x + (-cO*sW-sO*cW*cI)*y
+	Y := (sO*cW+cO*sW*cI)*x + (-sO*sW+cO*cW*cI)*y
+	Z := (sW*sI)*x + (cW*sI)*y
 
-	x := (cosO*cosW-sinO*sinW*cosI)*xOrb + (-cosO*sinW-sinO*cosW*cosI)*yOrb
-	y := (sinO*cosW+cosO*sinW*cosI)*xOrb + (-sinO*sinW+cosO*cosW*cosI)*yOrb
-	z := (sinW*sinI)*xOrb + (cosW*sinI)*yOrb
+	return Vector{X, Y, Z}
+}
 
-	return Vector{x, y, z}
+func heliocentricEcliptic(a, e, I, L, wbar, Omega float64) Vector {
+	M := degToRad(math.Mod(L-wbar, 360))
+	xOrb, yOrb := keplerPosition(a, e, M)
+
+	w := degToRad(wbar - Omega)
+	Ir := degToRad(I)
+	Or := degToRad(Omega)
+
+	return orbitalToEcliptic(xOrb, yOrb, Ir, Or, w)
 }
 
 func eclipticToEquatorial(v Vector) Vector {
 	eps := degToRad(obliquity)
-	cosE, sinE := math.Cos(eps), math.Sin(eps)
+	cE, sE := math.Cos(eps), math.Sin(eps)
 
 	return Vector{
 		X: v.X,
-		Y: cosE*v.Y - sinE*v.Z,
-		Z: sinE*v.Y + cosE*v.Z,
+		Y: cE*v.Y - sE*v.Z,
+		Z: sE*v.Y + cE*v.Z,
 	}
 }
 
 func equatorialToECEF(v Vector, unixSec int64) Vector {
 	theta := gmst(unixSec)
+	c, s := math.Cos(theta), math.Sin(theta)
 
 	return Vector{
-		X: v.X*math.Cos(theta) + v.Y*math.Sin(theta),
-		Y: -v.X*math.Sin(theta) + v.Y*math.Cos(theta),
+		X: v.X*c + v.Y*s,
+		Y: -v.X*s + v.Y*c,
 		Z: v.Z,
 	}
 }
 
-func PlanetGeocentricECEF(el OrbitalElements, unixSec int64) (pos Vector, distMeters float64) {
+func planetGeocentricEq(el OrbitalElements, unixSec int64) (Vector, Vector) {
 	T := julianCenturies(unixSec)
 	aP, eP, IP, LP, wbarP, OmegaP := elementAtEpoch(el, T)
 	aE, eE, IE, LE, wbarE, OmegaE := elementAtEpoch(EarthElements, T)
@@ -146,6 +155,26 @@ func PlanetGeocentricECEF(el OrbitalElements, unixSec int64) (pos Vector, distMe
 
 	geoEcl := sub(planetHelio, earthHelio)
 	geoEq := eclipticToEquatorial(geoEcl)
+	geoEq = scale(geoEq, auToMeters)
+
+	return geoEcl, geoEq
+}
+
+func sunGeocentricEq(unixSec int64) (Vector, Vector) {
+	T := julianCenturies(unixSec)
+	aE, eE, IE, LE, wbarE, OmegaE := elementAtEpoch(EarthElements, T)
+
+	earthHelio := heliocentricEcliptic(aE, eE, IE, LE, wbarE, OmegaE)
+
+	sunGeoEcl := scale(earthHelio, -1)
+	sunGeoEq := eclipticToEquatorial(sunGeoEcl)
+	sunGeoEq = scale(sunGeoEq, auToMeters)
+
+	return sunGeoEcl, sunGeoEq
+}
+
+func PlanetGeocentricECEF(el OrbitalElements, unixSec int64) (Vector, float64) {
+	geoEcl, geoEq := planetGeocentricEq(el, unixSec)
 	ecef := equatorialToECEF(geoEq, unixSec)
 
 	ecefMeters := scale(ecef, auToMeters)
@@ -154,18 +183,22 @@ func PlanetGeocentricECEF(el OrbitalElements, unixSec int64) (pos Vector, distMe
 	return ecefMeters, dist
 }
 
-func SunGeocentricECEF(unixSec int64) (pos Vector, distMeters float64) {
-	T := julianCenturies(unixSec)
-	aE, eE, IE, LE, wbarE, OmegaE := elementAtEpoch(EarthElements, T)
-
-	earthHelio := heliocentricEcliptic(aE, eE, IE, LE, wbarE, OmegaE)
-
-	sunGeoEcl := scale(earthHelio, -1)
-	sunGeoEq := eclipticToEquatorial(sunGeoEcl)
+func SunGeocentricECEF(unixSec int64) (Vector, float64) {
+	sunGeoEcl, sunGeoEq := sunGeocentricEq(unixSec)
 	ecef := equatorialToECEF(sunGeoEq, unixSec)
 
 	ecefMeters := scale(ecef, auToMeters)
 	dist := length(sunGeoEcl) * auToMeters
+
+	return ecefMeters, dist
+}
+
+func MoonGeocentricECEF(unixSec int64) (Vector, float64) {
+	distKm, moonGeoEq := moonGeocentricEq(unixSec)
+	ecef := equatorialToECEF(moonGeoEq, unixSec)
+
+	ecefMeters := scale(ecef, 1000)
+	dist := distKm * 1000
 
 	return ecefMeters, dist
 }

@@ -203,7 +203,7 @@ func NormalizedRadius(radius, distance, fovDeg float64) float64 {
 	return angularRadius / (fovRad / 2.0)
 }
 
-func AzimuthElevation(lat, lon float64, objECEF Vector) (yawDeg, pitchDeg float64, visible bool) {
+func AzimuthElevation(lat, lon float64, objECEF Vector) (float64, float64, bool) {
 	camECEF := gpsToECEF(lat, lon)
 	dir := normalize(sub(objECEF, camECEF))
 	east, north, up := enuBasis(lat, lon)
@@ -212,8 +212,8 @@ func AzimuthElevation(lat, lon float64, objECEF Vector) (yawDeg, pitchDeg float6
 		return 0, 0, false
 	}
 
-	pitchDeg = math.Asin(math.Max(-1, math.Min(1, dot(dir, up)))) * 180 / math.Pi
-	yawDeg = math.Atan2(dot(dir, east), dot(dir, north)) * 180 / math.Pi
+	pitchDeg := math.Asin(math.Max(-1, math.Min(1, dot(dir, up)))) * 180 / math.Pi
+	yawDeg := math.Atan2(dot(dir, east), dot(dir, north)) * 180 / math.Pi
 
 	if yawDeg < 0 {
 		yawDeg += 360
