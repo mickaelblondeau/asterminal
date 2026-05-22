@@ -123,7 +123,7 @@ func (m *Renderer) View() string {
 
 func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOffset int64) string {
 	var res strings.Builder
-	objectMap := make(map[string]string)
+	objectMap := make(map[string]cell)
 	t := time.Now().Unix() + timeOffset
 
 	for i := range objects {
@@ -169,8 +169,8 @@ func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOf
 				res.WriteString("─")
 			} else if y > groundY {
 				res.WriteString(groundStyle.Render("░"))
-			} else if val := objectMap[fmt.Sprintf("%d:%d", x, y)]; val != "" {
-				res.WriteString(val)
+			} else if val, ok := objectMap[fmt.Sprintf("%d:%d", x, y)]; ok {
+				res.WriteString(getCachedStyle(val.fg, val.bg).Render(val.char))
 			} else {
 				res.WriteString("\u00A0")
 			}

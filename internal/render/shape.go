@@ -14,7 +14,33 @@ const (
 	radiusForTiny   = 0.00001
 )
 
-func drawCircle(objectMap map[string]string, cx int, cy int, r float64, color string) {
+type cell struct {
+	char, fg, bg string
+}
+
+var styleCache = make(map[string]lipgloss.Style)
+
+func getCachedStyle(fg, bg string) lipgloss.Style {
+	key := fmt.Sprintf("%s:%s", fg, bg)
+
+	if _, ok := styleCache[key]; !ok {
+		style := lipgloss.NewStyle()
+
+		if fg != "" {
+			style = style.Foreground(lipgloss.Color(fg))
+		}
+
+		if bg != "" {
+			style = style.Background(lipgloss.Color(bg))
+		}
+
+		styleCache[key] = style
+	}
+
+	return styleCache[key]
+}
+
+func drawCircle(objectMap map[string]cell, cx int, cy int, r float64, color string) {
 	char := "⬤"
 
 	if r < radiusForMedium {
@@ -28,12 +54,11 @@ func drawCircle(objectMap map[string]string, cx int, cy int, r float64, color st
 	}
 
 	if r < raidusForPoint {
-		style := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
-		objectMap[fmt.Sprintf("%d:%d", cx, cy)] = style.Render(char)
+		key := fmt.Sprintf("%d:%d", cx, cy)
+		currentCell := objectMap[key]
+		objectMap[key] = cell{fg: color, char: char, bg: currentCell.bg}
 		return
 	}
-
-	style := lipgloss.NewStyle().Background(lipgloss.Color(color))
 
 	rx := int(r / aspect)
 	ry := int(r)
@@ -42,15 +67,14 @@ func drawCircle(objectMap map[string]string, cx int, cy int, r float64, color st
 		for x := -rx; x <= rx; x++ {
 			dx := float64(x) * aspect
 			dy := float64(y)
+
 			if dx*dx+dy*dy <= r*r {
-				objectMap[fmt.Sprintf("%d:%d", cx+x, cy+y)] = style.Render(" ")
+				objectMap[fmt.Sprintf("%d:%d", cx+x, cy+y)] = cell{bg: color, char: " "}
 			}
 		}
 	}
 }
 
-func drawStar(objectMap map[string]string, x int, y int, color string) {
-	style := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
-
-	objectMap[fmt.Sprintf("%d:%d", x, y)] = style.Render("✦")
+func drawStar(objectMap map[string]cell, x int, y int, color string) {
+	objectMap[fmt.Sprintf("%d:%d", x, y)] = cell{fg: color, char: "✦"}
 }
