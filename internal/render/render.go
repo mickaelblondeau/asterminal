@@ -140,8 +140,8 @@ func renderMap(w int, h int, camera model.Camera, objects []model.Object, timeOf
 			continue
 		}
 
-		coordX := int(posX * float64(w))
-		coordY := int(posY * float64(h))
+		coordX := int(math.Round(posX * float64(w)))
+		coordY := int(math.Round(posY * float64(h)))
 
 		dist := object.Position.Dist
 		if object.Kind != model.KindStar {

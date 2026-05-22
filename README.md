@@ -2,7 +2,8 @@
 
 A terminal-based sky viewer, observe planets, the Moon, the Sun and major stars from any location on Earth, at any date.
 
-> 📸 *screenshot / gif here*
+![eclipse](docs/eclipse.gif)
+![sky](docs/sky.png)
 
 ---
 
