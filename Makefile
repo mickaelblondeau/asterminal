@@ -1,3 +1,7 @@
+VERSION := $(shell git tag --sort=-v:refname | head -n 1)
+MAJOR := $(shell echo $(VERSION) | cut -d. -f1)
+MINOR := $(shell echo $(VERSION) | cut -d. -f1,2)
+
 run:
 	go run cmd/main.go --lat=50.34809655855528 --lon=3.466621192456120
 
@@ -26,3 +30,7 @@ lint:
 
 test:
 	go test -race ./...
+
+build:
+	docker build --build-arg VERSION=$(VERSION) -t mickaelblondeau/asterminal:$(VERSION) -t mickaelblondeau/asterminal:$(MINOR) -t mickaelblondeau/asterminal:$(MAJOR) -t mickaelblondeau/asterminal:latest .
+	docker push mickaelblondeau/asterminal --all-tags

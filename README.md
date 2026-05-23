@@ -20,6 +20,12 @@ A terminal-based sky viewer, observe planets, the Moon, the Sun and major stars 
 
 ## Installation
 
+### With Docker
+```bash
+docker pull mickaelblondeau/asterminal
+```
+
+### With Building
 ```bash
 git clone https://github.com/mickaelblondeau/asterminal
 cd asterminal
@@ -29,6 +35,14 @@ go build -o asterminal ./cmd/main.go
 ---
 
 ## Usage
+
+### With Docker
+
+```bash
+docker run --rm -it -e TERM=$TERM asterminal [options]
+```
+
+### With Building
 
 ```bash
 ./asterminal [options]
